@@ -18,12 +18,9 @@ export interface GraphData {
   count: { nodes: number; edges: number };
 }
 
-export interface PredictionData {
-  disease: string;
-  region: string;
-  model: string;
-  horizon_days: number;
-  predictions: Record<string, number>[];
+export interface StatsData {
+  graph: { nodes: number; edges: number };
+  centrality: { top_diseases: { node: string; score: number }[] };
 }
 
 export const api = {
@@ -35,10 +32,8 @@ export const api = {
   graph: (disease?: string, region?: string, depth = 2) =>
     http.get<GraphData>("/graph/", { params: { disease, region, depth } }).then((r) => r.data),
 
-  predict: (disease: string, region: string, model: "sir" | "ml" = "sir", days = 30) =>
-    http
-      .get<PredictionData>(`/predict/${disease}`, { params: { region, model, days } })
-      .then((r) => r.data),
+  stats: () =>
+    http.get<StatsData>("/graph/stats").then((r) => r.data),
 
   ingest: (source: string) =>
     http.post(`/ingest/${source}`).then((r) => r.data),

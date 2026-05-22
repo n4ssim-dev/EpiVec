@@ -22,12 +22,6 @@ class Settings(BaseSettings):
     chroma_host: str = "localhost"
     chroma_port: int = 8001
 
-    # LLM
-    anthropic_api_key: str = ""
-    llm_provider: str = "claude"  # claude | ollama
-    ollama_host: str = "http://localhost:11434"
-    ollama_model: str = "llama3"
-
     # App
     environment: str = "development"
     log_level: str = "INFO"
