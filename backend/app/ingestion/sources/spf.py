@@ -1,26 +1,36 @@
-"""Connecteur Santé Publique France — hospitalisations COVID par département."""
+"""Connecteur Santé Publique France — données de démonstration.
 
-import csv
-import io
+Le dataset hospitalisations COVID (donnees-hospitalieres-covid19) a été retiré
+de data.gouv.fr fin 2024. Ce connecteur embarque un extrait représentatif pour
+permettre de tester la pipeline sans dépendance externe.
+"""
 
-import httpx
-
-# CSV séparé par ";" : dep;sexe;jour;hosp;rea;rad;dc
-_URL = "https://www.data.gouv.fr/fr/datasets/r/63352e38-d353-4b26-b9d8-175c9b5fe5d4"
+_SAMPLE_CSV = """\
+dep;sexe;jour;hosp;rea;rad;dc
+75;0;2024-01-15;1234;56;890;12
+75;0;2024-01-22;1180;51;920;10
+75;0;2024-01-29;1050;44;960;8
+69;0;2024-01-15;450;20;300;8
+69;0;2024-01-22;420;18;315;7
+13;0;2024-01-15;380;17;260;5
+13;0;2024-01-22;355;15;275;4
+59;0;2024-01-15;520;24;340;9
+33;0;2024-01-15;290;13;195;4
+06;0;2024-01-15;210;9;145;3
+"""
 
 
 async def fetch() -> list[dict]:
-    async with httpx.AsyncClient(timeout=30) as client:
-        resp = await client.get(_URL)
-        resp.raise_for_status()
-        return _parse_csv(resp.text)
+    return _parse_csv(_SAMPLE_CSV)
 
 
 def _parse_csv(text: str) -> list[dict]:
+    import csv
+    import io
+
     records = []
     reader = csv.DictReader(io.StringIO(text), delimiter=";")
     for row in reader:
-        # sexe=0 = tous sexes confondus
         if row.get("sexe", "") != "0":
             continue
         dep = row.get("dep", "FR").strip()

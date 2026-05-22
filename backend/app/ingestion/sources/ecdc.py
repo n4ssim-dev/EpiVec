@@ -10,7 +10,7 @@ _URL = "https://opendata.ecdc.europa.eu/covid19/nationalcasedeath_eueea_daily_ei
 
 
 async def fetch() -> list[dict]:
-    async with httpx.AsyncClient(timeout=30) as client:
+    async with httpx.AsyncClient(timeout=30, follow_redirects=True) as client:
         resp = await client.get(_URL)
         resp.raise_for_status()
         return _parse_csv(resp.text)

@@ -11,7 +11,7 @@ _SEARCH_URL = "https://www.data.gouv.fr/api/1/datasets/?tag=epidemiologie&page_s
 
 
 async def fetch() -> list[dict]:
-    async with httpx.AsyncClient(timeout=30) as client:
+    async with httpx.AsyncClient(timeout=30, follow_redirects=True) as client:
         resp = await client.get(_SEARCH_URL)
         resp.raise_for_status()
         return _parse(resp.json())
