@@ -1,6 +1,8 @@
-# EpiGraph
+# EpiVec
 
-Plateforme desktop d'analyse et de prédiction épidémiologique par GraphRAG, interrogeable en langage naturel.
+Plateforme desktop d'analyse épidémiologique par GraphRAG, interrogeable en langage naturel.
+
+Projet d'initiation aux fondamentaux du RAG et du GraphRAG en contexte réel — pas de LLM, pas de framework d'orchestration, la pipeline est écrite à la main.
 
 ## Prérequis
 
@@ -26,35 +28,47 @@ npm install
 npm run dev
 ```
 
+## Ingestion des données
+
+```bash
+# Une fois le backend démarré
+curl -X POST http://localhost:8000/ingest
+```
+
+L'ingestion télécharge les sources (SPF, ECDC, data.gouv.fr), génère les chunks,
+calcule les embeddings et construit les triples du graphe.
+
 ## Structure
 
 ```
 EpiVec/
-├── backend/          # FastAPI — API REST, NLP, GraphRAG, prédiction
-├── electron/         # App desktop Electron + React
+├── backend/
+│   └── app/
+│       ├── api/          # Endpoints FastAPI (query, graph, stats, ingest)
+│       ├── core/         # Config, connexion base de données
+│       ├── graph/        # NetworkX — construction, traversal, métriques
+│       ├── ingestion/    # Fetcher, chunker, embedder, triple parser
+│       ├── models/       # Modèles SQLAlchemy (Triple, Region, Indicator)
+│       ├── nlp/          # spaCy — NER, extraction d'entités
+│       └── rag/          # Retriever ChromaDB, graph retriever, answer builder
+├── electron/             # App desktop Electron + React + Sigma.js
 ├── docker-compose.yml
+├── docker-compose.dev.yml
 └── .env.example
 ```
 
-## Ingestion des données
+## Pipeline RAG/GraphRAG
 
-```bash
-# Via API (une fois le backend démarré)
-curl -X POST http://localhost:8000/ingest/spf
-curl -X POST http://localhost:8000/ingest/all
 ```
-
-## LLM
-
-Par défaut l'app utilise Claude (Anthropic). Pour utiliser Ollama en local :
-
-```bash
-# Démarrer avec Ollama
-docker compose -f docker-compose.yml -f docker-compose.dev.yml --profile ollama up
-
-# Puis dans .env :
-# LLM_PROVIDER=ollama
-# OLLAMA_MODEL=llama3
+Question
+  │
+  ├── spaCy NER          → entités (maladie, région, date)
+  ├── sentence-transformers → embedding de la question
+  │
+  ├── ChromaDB           → top-k chunks textuels proches (retrieval vectoriel)
+  └── NetworkX traversal → sous-graphe depuis les entités détectées
+                    │
+                    └── answer_builder → réponse structurée par template
 ```
 
 ## Stack
@@ -63,10 +77,8 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml --profile ollama 
 |---|---|
 | Frontend | Electron + React + Sigma.js |
 | Backend | FastAPI + Python |
-| BDD | PostgreSQL |
+| BDD | PostgreSQL (triples) |
 | Vecteurs | ChromaDB |
+| Embeddings | sentence-transformers (local) |
 | Graphe | NetworkX |
 | NLP | spaCy (fr_core_news_lg) |
-| RAG | LangChain |
-| LLM | Claude API / Ollama |
-| Prédiction | SIR/SEIR + scikit-learn |
