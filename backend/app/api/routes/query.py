@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_session
 from app.nlp.extractor import extract_entities
 from app.nlp.intent import classify_intent
-from app.rag.chain import run_graphrag_chain
+from app.rag.answer_builder import run_graphrag_chain
 
 router = APIRouter()
 

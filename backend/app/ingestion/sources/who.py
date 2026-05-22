@@ -1,4 +1,7 @@
-"""Connecteur OMS/WHO — données épidémiologiques mondiales."""
+"""Connecteur OMS/WHO — cas et décès COVID mondiaux."""
+
+import csv
+import io
 
 import httpx
 
@@ -14,33 +17,23 @@ async def fetch() -> list[dict]:
 
 def _parse_csv(text: str) -> list[dict]:
     records = []
-    lines = text.strip().splitlines()
-    if not lines:
-        return records
-
-    headers = [h.strip() for h in lines[0].split(",")]
-    for line in lines[1:]:
-        row = dict(zip(headers, line.split(",")))
+    reader = csv.DictReader(io.StringIO(text))
+    for row in reader:
         date = row.get("Date_reported", "").strip()
         country_code = row.get("Country_code", "").strip()
-        new_cases = row.get("New_cases", "0").strip()
-        new_deaths = row.get("New_deaths", "0").strip()
-
         if not date or not country_code:
             continue
-
-        for metric, value in [("cases", new_cases), ("deaths", new_deaths)]:
-            try:
-                records.append(
-                    {
+        for metric, key in [("cases", "New_cases"), ("deaths", "New_deaths")]:
+            raw = row.get(key, "").strip()
+            if raw:
+                try:
+                    records.append({
                         "disease": "covid19",
                         "region_code": country_code,
                         "date": date,
                         "metric": metric,
-                        "value": float(value),
-                    }
-                )
-            except ValueError:
-                continue
-
+                        "value": float(raw),
+                    })
+                except ValueError:
+                    continue
     return records
