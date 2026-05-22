@@ -1,0 +1,20 @@
+# Usage : docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+# Ajoute le hot-reload backend et Ollama optionnel
+
+services:
+  backend:
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    environment:
+      ENVIRONMENT: development
+
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollamamodels:/root/.ollama
+    profiles:
+      - ollama
+
+volumes:
+  ollamamodels:
