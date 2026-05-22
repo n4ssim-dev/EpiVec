@@ -17,21 +17,9 @@ spacy>=3.7.0
 # Graphe
 networkx>=3.3
 
-# Vecteurs
+# Vecteurs + embeddings locaux
 chromadb>=0.5.0
-
-# RAG / LangChain
-langchain>=0.2.0
-langchain-community>=0.2.0
-langchain-anthropic>=0.1.0
-
-# LLM
-anthropic>=0.28.0
-
-# Prédiction
-scikit-learn>=1.4.0
-numpy>=1.26.0
-scipy>=1.13.0
+sentence-transformers>=3.0.0
 
 # Tests
 pytest>=8.0.0
