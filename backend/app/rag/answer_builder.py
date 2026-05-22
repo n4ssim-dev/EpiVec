@@ -1,8 +1,11 @@
 """Assemblage de réponse par template depuis les documents récupérés — sans LLM."""
 
-from sqlalchemy.ext.asyncio import AsyncSession
+from __future__ import annotations
 
-from app.rag.retriever import retrieve_context
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from sqlalchemy.ext.asyncio import AsyncSession
 
 
 def _format_doc(doc: dict) -> str:
@@ -53,6 +56,7 @@ async def run_graphrag_chain(
     intent: str,
     session: AsyncSession,
 ) -> tuple[str, list[str]]:
+    from app.rag.retriever import retrieve_context
     docs = retrieve_context(question, entities)
     sources = list({d["metadata"].get("source", "inconnu") for d in docs if d["source"] == "vector"})
     answer = _build_answer(question, docs, intent)

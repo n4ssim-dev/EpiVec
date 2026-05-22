@@ -1,18 +1,28 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import ChatPanel from "./components/ChatPanel";
 import Dashboard from "./components/Dashboard";
 import GraphView from "./components/GraphView";
 import MapView from "./components/MapView";
+import { api } from "./api/client";
+import { useStore } from "./store";
 
 type Tab = "graph" | "map" | "dashboard" | "chat";
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<Tab>("graph");
+  const { backendOnline, setBackendOnline } = useStore();
+
+  useEffect(() => {
+    const check = () => api.health().then(() => setBackendOnline(true)).catch(() => setBackendOnline(false));
+    check();
+    const id = setInterval(check, 10_000);
+    return () => clearInterval(id);
+  }, [setBackendOnline]);
 
   const tabs: { id: Tab; label: string }[] = [
     { id: "graph", label: "Graphe" },
     { id: "map", label: "Carte" },
-    { id: "dashboard", label: "Prédictions" },
+    { id: "dashboard", label: "Métriques" },
     { id: "chat", label: "Analyse NLP" },
   ];
 
@@ -20,7 +30,13 @@ export default function App() {
     <div className="flex flex-col h-screen bg-slate-900 text-slate-100">
       {/* Header */}
       <header className="flex items-center justify-between px-6 py-3 bg-slate-800 border-b border-slate-700">
-        <h1 className="text-xl font-bold text-blue-400">EpiGraph</h1>
+        <div className="flex items-center gap-3">
+          <h1 className="text-xl font-bold text-blue-400">EpiGraph</h1>
+          <span
+            title={backendOnline ? "Backend connecté" : "Backend hors ligne"}
+            className={`w-2 h-2 rounded-full ${backendOnline ? "bg-emerald-400" : "bg-red-500"}`}
+          />
+        </div>
         <nav className="flex gap-1">
           {tabs.map((tab) => (
             <button
