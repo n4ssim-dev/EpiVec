@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "concurrently \"npm run dev:renderer\" \"wait-on http://localhost:5173 && npm run dev:main\"",
     "dev:renderer": "vite",
-    "dev:main": "tsc -p tsconfig.main.json && electron .",
+    "dev:main": "tsc -p tsconfig.main.json && electron --no-sandbox .",
     "build": "npm run build:renderer && npm run build:main && electron-builder",
     "build:renderer": "vite build",
     "build:main": "tsc -p tsconfig.main.json",
@@ -16,7 +16,7 @@
     "react": "^18.3.0",
     "react-dom": "^18.3.0",
     "sigma": "^3.0.0",
-    "@react-sigma/core": "^3.0.0",
+    "@react-sigma/core": "^4.0.0",
     "graphology": "^0.25.0",
     "graphology-layout-forceatlas2": "^0.10.0",
     "zustand": "^4.5.0",

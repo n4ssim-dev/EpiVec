@@ -55,7 +55,7 @@ export default function App() {
       </header>
 
       {/* Main content */}
-      <main className="flex-1 overflow-hidden">
+      <main className="flex-1 relative overflow-hidden">
         {activeTab === "graph" && <GraphView />}
         {activeTab === "map" && <MapView />}
         {activeTab === "dashboard" && <Dashboard />}
