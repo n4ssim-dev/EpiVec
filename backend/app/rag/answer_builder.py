@@ -18,7 +18,23 @@ def _format_doc(doc: dict) -> str:
     return f"• {doc['text']}"
 
 
-def _build_answer(question: str, docs: list[dict], intent: str) -> str:
+def _coverage_warning(entities: dict, vector_docs: list[dict]) -> str | None:
+    """Retourne un avertissement si les données retournées ne couvrent pas la période demandée."""
+    import re
+    years_asked = re.findall(r"\b(20\d{2})\b", " ".join(entities.get("dates", [])))
+    if not years_asked or not vector_docs:
+        return None
+    year = years_asked[0]
+    available_years = sorted({d["metadata"].get("date", "")[:4] for d in vector_docs if d["metadata"].get("date")})
+    if year not in available_years:
+        return (
+            f"⚠ Aucune donnée disponible pour {year}. "
+            f"Données présentes pour : {', '.join(available_years) or 'période inconnue'}."
+        )
+    return None
+
+
+def _build_answer(question: str, docs: list[dict], intent: str, entities: dict | None = None) -> str:
     if not docs:
         return (
             "Aucune donnée disponible dans le graphe de connaissances pour cette question.\n"
@@ -30,11 +46,16 @@ def _build_answer(question: str, docs: list[dict], intent: str) -> str:
 
     lines = [f"Résultats pour : « {question} »\n"]
 
+    if entities:
+        warning = _coverage_warning(entities, vector_docs)
+        if warning:
+            lines.append(warning + "\n")
+
     if vector_docs:
         label = "Évolution temporelle :" if intent == "trend" else "Données épidémiologiques :"
         lines.append(label)
         ordered = (
-            sorted(vector_docs[:6], key=lambda d: d["metadata"].get("object", ""))
+            sorted(vector_docs[:6], key=lambda d: d["metadata"].get("date", ""))
             if intent == "trend"
             else vector_docs[:6]
         )
@@ -59,5 +80,5 @@ async def run_graphrag_chain(
     from app.rag.retriever import retrieve_context
     docs = retrieve_context(question, entities)
     sources = list({d["metadata"].get("source", "inconnu") for d in docs if d["source"] == "vector"})
-    answer = _build_answer(question, docs, intent)
+    answer = _build_answer(question, docs, intent, entities)
     return answer, sources
