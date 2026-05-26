@@ -1,6 +1,9 @@
 import { app, BrowserWindow, shell } from "electron";
 import path from "path";
 
+// Utiliser SwiftShader (rendu WebGL logiciel) pour éviter les crashs GPU sur Linux
+app.commandLine.appendSwitch("enable-unsafe-swiftshader");
+
 const isDev = process.env.NODE_ENV === "development";
 
 function createWindow(): void {

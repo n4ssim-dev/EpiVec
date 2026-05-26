@@ -21,12 +21,16 @@ def _parse_csv(text: str) -> list[dict]:
     reader = csv.DictReader(io.StringIO(text))
     for row in reader:
         country = row.get("geoId", "UNKNOWN").strip()
-        date = row.get("dateRep", "").strip()
+        date_raw = row.get("dateRep", "").strip()
         # dateRep au format DD/MM/YYYY → normaliser
-        if "/" in date:
-            parts = date.split("/")
+        if "/" in date_raw:
+            parts = date_raw.split("/")
             if len(parts) == 3:
-                date = f"{parts[2]}-{parts[1].zfill(2)}-{parts[0].zfill(2)}"
+                date_raw = f"{parts[2]}-{parts[1].zfill(2)}-{parts[0].zfill(2)}"
+
+        # Limiter aux données 2023+ pour éviter d'ingérer l'historique complet
+        if date_raw[:4] < "2023":
+            continue
 
         for metric, key in [("cases", "cases"), ("deaths", "deaths")]:
             raw = row.get(key, "").strip()
@@ -35,7 +39,7 @@ def _parse_csv(text: str) -> list[dict]:
                     records.append({
                         "disease": "covid19",
                         "region_code": country,
-                        "date": date,
+                        "date": date_raw,
                         "metric": metric,
                         "value": float(raw),
                     })

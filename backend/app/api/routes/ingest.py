@@ -6,7 +6,7 @@ from app.ingestion.pipeline import run_ingestion
 
 router = APIRouter()
 
-SOURCES = {"spf", "ecdc", "who", "data_gouv"}
+SOURCES = {"spf", "ecdc", "who", "data_gouv", "flunet", "mpox", "dengue"}
 
 
 @router.post("/{source}")
