@@ -1,15 +1,16 @@
 import networkx as nx
 
-from app.graph.builder import get_graph
+from app.graph.builder import get_graph, get_collapsed_graph
 
 
 def compute_centrality() -> dict[str, dict]:
-    G = get_graph()
-    if G.number_of_nodes() == 0:
+    C = get_collapsed_graph()
+    if C.number_of_nodes() == 0:
         return {}
+    U = C.to_undirected()
     return {
-        "degree": nx.degree_centrality(G),
-        "pagerank": nx.pagerank(G),
+        "degree": nx.degree_centrality(U),
+        "pagerank": nx.pagerank(U),
     }
 
 
@@ -19,12 +20,13 @@ def get_propagation_features(disease: str, region: str) -> dict:
     if node not in G:
         return {}
 
-    pr = nx.pagerank(G)
+    C = get_collapsed_graph()
+    U = C.to_undirected()
+    pr = nx.pagerank(U) if U.number_of_nodes() > 0 else {}
+    region_node = f"region:{region}"
     return {
         "out_degree": G.out_degree(node),
         "in_degree": G.in_degree(node),
         "pagerank": pr.get(node, 0.0),
-        "region_connections": len([
-            n for n in G.successors(node) if f"region:{region}" in n
-        ]),
+        "region_connections": 1 if C.has_edge(node, region_node) else 0,
     }

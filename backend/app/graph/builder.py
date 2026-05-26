@@ -4,12 +4,28 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.triple import Triple
 
-# Graphe global chargé en mémoire — reconstruit à chaque ingestion
 _graph: nx.DiGraph = nx.DiGraph()
+_collapsed_graph: nx.DiGraph = nx.DiGraph()
+
+
+def _collapse_id(node_id: str) -> str:
+    if node_id.startswith("region:"):
+        return node_id.split("@")[0]
+    return node_id
+
+
+def _build_collapsed(G: nx.DiGraph) -> nx.DiGraph:
+    """Retourne un graphe où region:XX@date → region:XX (dédupliqué)."""
+    C = nx.DiGraph()
+    for u, v, d in G.edges(data=True):
+        cu, cv = _collapse_id(u), _collapse_id(v)
+        if cu != cv and not C.has_edge(cu, cv):
+            C.add_edge(cu, cv, predicate=d.get("predicate"))
+    return C
 
 
 async def rebuild_graph(session: AsyncSession) -> nx.DiGraph:
-    global _graph
+    global _graph, _collapsed_graph
     result = await session.execute(select(Triple))
     triples = result.scalars().all()
 
@@ -24,11 +40,16 @@ async def rebuild_graph(session: AsyncSession) -> nx.DiGraph:
         )
 
     _graph = G
+    _collapsed_graph = _build_collapsed(G)
     return _graph
 
 
 def get_graph() -> nx.DiGraph:
     return _graph
+
+
+def get_collapsed_graph() -> nx.DiGraph:
+    return _collapsed_graph
 
 
 async def get_subgraph(
@@ -37,40 +58,35 @@ async def get_subgraph(
     depth: int,
     session: AsyncSession,
 ) -> tuple[list[dict], list[dict]]:
-    G = _graph if _graph.number_of_nodes() > 0 else await rebuild_graph(session)
+    global _collapsed_graph
+    if _graph.number_of_nodes() == 0:
+        await rebuild_graph(session)
 
-    MAX_NODES = 120
-    # Par seed : quota équitable pour ne pas noyer les nœuds maladie
-    filtered = bool(disease or region)
+    C = _collapsed_graph
+    MAX_NODES = 200
 
     seed_nodes: set[str] = set()
     if disease:
         seed_nodes.add(f"disease:{disease}")
     if region:
-        seed_nodes.update(n for n in G.nodes if f"region:{region}" in n)
+        seed_nodes.update(n for n in C.nodes if n == f"region:{region}")
 
     if not seed_nodes:
-        # Sans filtre : 5 maladies seed pour garder le graphe lisible
-        disease_nodes = [n for n in G.nodes if n.startswith("disease:")]
-        seed_nodes = set(disease_nodes[:5])
+        seed_nodes = {n for n in C.nodes if n.startswith("disease:")}
 
-    per_seed = MAX_NODES // max(len(seed_nodes), 1) if not filtered else MAX_NODES
     subgraph_nodes: set[str] = set()
     for node in seed_nodes:
-        if node in G:
-            reachable = sorted(
-                nx.single_source_shortest_path_length(G, node, cutoff=depth).items(),
-                key=lambda x: x[1],
-            )
-            subgraph_nodes.update(n for n, _ in reachable[:per_seed])
-            if len(subgraph_nodes) >= MAX_NODES:
-                break
+        if node in C:
+            reachable = nx.single_source_shortest_path_length(C, node, cutoff=depth)
+            subgraph_nodes.update(reachable.keys())
 
-    # Plafonner le nombre de nœuds retournés
     if len(subgraph_nodes) > MAX_NODES:
-        subgraph_nodes = set(list(subgraph_nodes)[:MAX_NODES])
+        kept = set(seed_nodes & subgraph_nodes)
+        others = list(subgraph_nodes - kept)
+        kept.update(others[: MAX_NODES - len(kept)])
+        subgraph_nodes = kept
 
-    sub = G.subgraph(subgraph_nodes)
+    sub = C.subgraph(subgraph_nodes)
     nodes = [{"id": n, "label": n} for n in sub.nodes]
     edges = [
         {"source": u, "target": v, "predicate": d.get("predicate")}
