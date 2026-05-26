@@ -1,9 +1,12 @@
 """Embeddings locaux via sentence-transformers + indexation dans ChromaDB."""
 
+import asyncio
 import chromadb
 from sentence_transformers import SentenceTransformer
 
 from app.core.config import settings
+
+_CHROMA_MAX_BATCH = 5000
 
 # Modèle multilingue léger (~50 Mo), optimisé pour la similarité sémantique
 _MODEL_NAME = "paraphrase-multilingual-MiniLM-L12-v2"
@@ -47,13 +50,20 @@ async def index_chunks(chunks: list[dict]) -> None:
 
     collection = _get_collection()
     texts = [c["text"] for c in chunks]
-    embeddings = embed_texts(texts)
+
+    # Encoding bloquant → thread pool pour ne pas geler la boucle événementielle
+    loop = asyncio.get_running_loop()
+    embeddings = await loop.run_in_executor(None, lambda: embed_texts(texts))
+
     ids = [f"{c['metadata']['disease']}_{c['metadata']['region']}_{c['metadata']['date']}" for c in chunks]
     metadatas = [c["metadata"] for c in chunks]
 
-    collection.upsert(
-        documents=texts,
-        embeddings=embeddings,
-        ids=ids,
-        metadatas=metadatas,
-    )
+    # ChromaDB impose une limite de batch (~5461) → on découpe
+    for start in range(0, len(chunks), _CHROMA_MAX_BATCH):
+        end = start + _CHROMA_MAX_BATCH
+        collection.upsert(
+            documents=texts[start:end],
+            embeddings=embeddings[start:end],
+            ids=ids[start:end],
+            metadatas=metadatas[start:end],
+        )

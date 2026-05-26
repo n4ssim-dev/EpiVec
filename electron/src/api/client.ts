@@ -2,7 +2,12 @@ import axios from "axios";
 
 const http = axios.create({
   baseURL: "http://localhost:8000",
-  timeout: 30_000,
+  timeout: 10_000,
+});
+
+const httpSlow = axios.create({
+  baseURL: "http://localhost:8000",
+  timeout: 120_000,
 });
 
 export interface QueryResponse {
@@ -27,14 +32,14 @@ export const api = {
   health: () => http.get<{ status: string }>("/health").then((r) => r.data),
 
   query: (question: string) =>
-    http.post<QueryResponse>("/query/", { question }).then((r) => r.data),
+    httpSlow.post<QueryResponse>("/query/", { question }).then((r) => r.data),
 
   graph: (disease?: string, region?: string, depth = 2) =>
-    http.get<GraphData>("/graph/", { params: { disease, region, depth } }).then((r) => r.data),
+    httpSlow.get<GraphData>("/graph/", { params: { disease, region, depth } }).then((r) => r.data),
 
   stats: () =>
-    http.get<StatsData>("/graph/stats").then((r) => r.data),
+    httpSlow.get<StatsData>("/graph/stats").then((r) => r.data),
 
   ingest: (source: string) =>
-    http.post(`/ingest/${source}`).then((r) => r.data),
+    httpSlow.post(`/ingest/${source}`).then((r) => r.data),
 };

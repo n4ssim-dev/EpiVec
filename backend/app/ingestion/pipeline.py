@@ -2,13 +2,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.ingestion.chunker import build_chunks
 from app.ingestion.normalizer import normalize_to_triples
-from app.ingestion.sources import data_gouv, ecdc, spf, who
+from app.ingestion.sources import data_gouv, dengue, ecdc, flunet, mpox, spf, who
 
 _CONNECTORS = {
     "spf": spf.fetch,
     "ecdc": ecdc.fetch,
     "who": who.fetch,
     "data_gouv": data_gouv.fetch,
+    "flunet": flunet.fetch,
+    "mpox": mpox.fetch,
+    "dengue": dengue.fetch,
 }
 
 

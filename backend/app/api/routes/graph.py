@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_session
-from app.graph.builder import get_graph, get_subgraph
+from app.graph.builder import get_graph, get_collapsed_graph, get_subgraph, rebuild_graph
 from app.graph.features import compute_centrality
 
 router = APIRouter()
@@ -20,8 +20,10 @@ async def get_graph_route(
 
 
 @router.get("/stats")
-async def get_stats() -> dict:
-    G = get_graph()
+async def get_stats(session: AsyncSession = Depends(get_session)) -> dict:
+    if get_graph().number_of_nodes() == 0:
+        await rebuild_graph(session)
+    G = get_collapsed_graph()
     centrality = compute_centrality()
 
     top_diseases: list[dict] = []

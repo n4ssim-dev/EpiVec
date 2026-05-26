@@ -1,4 +1,5 @@
 import { FormEvent, useRef, useState } from "react";
+import axios from "axios";
 import { api } from "../../api/client";
 import { useStore } from "../../store";
 
@@ -19,8 +20,11 @@ export default function ChatPanel() {
     try {
       const resp = await api.query(question);
       addMessage({ role: "assistant", content: resp.answer, sources: resp.sources });
-    } catch {
-      addMessage({ role: "assistant", content: "Erreur : impossible de contacter le backend." });
+    } catch (err) {
+      const msg = axios.isAxiosError(err) && err.code === "ECONNABORTED"
+        ? "Le modèle met du temps à répondre (chargement en cours). Réessayez dans quelques instants."
+        : "Erreur : impossible de contacter le backend.";
+      addMessage({ role: "assistant", content: msg });
     } finally {
       setQuerying(false);
       bottomRef.current?.scrollIntoView({ behavior: "smooth" });

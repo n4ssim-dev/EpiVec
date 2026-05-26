@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import ChatPanel from "./components/ChatPanel";
 import Dashboard from "./components/Dashboard";
+import DataSources from "./components/DataSources";
 import GraphView from "./components/GraphView";
 import MapView from "./components/MapView";
 import { api } from "./api/client";
 import { useStore } from "./store";
 
-type Tab = "graph" | "map" | "dashboard" | "chat";
+type Tab = "graph" | "map" | "dashboard" | "chat" | "sources";
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<Tab>("graph");
@@ -24,6 +25,7 @@ export default function App() {
     { id: "map", label: "Carte" },
     { id: "dashboard", label: "Métriques" },
     { id: "chat", label: "Analyse NLP" },
+    { id: "sources", label: "Sources" },
   ];
 
   return (
@@ -55,11 +57,12 @@ export default function App() {
       </header>
 
       {/* Main content */}
-      <main className="flex-1 overflow-hidden">
+      <main className="flex-1 relative overflow-hidden">
         {activeTab === "graph" && <GraphView />}
         {activeTab === "map" && <MapView />}
         {activeTab === "dashboard" && <Dashboard />}
         {activeTab === "chat" && <ChatPanel />}
+        {activeTab === "sources" && <DataSources />}
       </main>
     </div>
   );
