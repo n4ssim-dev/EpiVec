@@ -55,6 +55,57 @@ L'app se connecte à `http://localhost:8000`. L'indicateur dans le header passe 
 
 ---
 
+## Guide d'utilisation
+
+L'app Electron expose 5 vues accessibles depuis la barre de navigation : **Graphe**, **Carte**, **Métriques**, **Analyse NLP**, **Sources**.
+
+### Sources — gérer l'ingestion des données
+
+![Sources](screenshots/sources.png)
+
+L'onglet **Sources** liste toutes les sources épidémiologiques disponibles avec leur statut (point vert = données déjà ingérées), le nombre d'indicateurs indexés, et un badge `live` pour les sources interrogées en temps réel. Deux actions sont disponibles :
+
+- **Ingérer** (par source) — déclenche l'ingestion d'une source spécifique.
+- **Tout ingérer** (en haut à droite) — ingère toutes les sources en une seule action.
+
+> Commencer par cette vue avant d'utiliser les autres onglets — le graphe et la recherche NLP sont vides tant qu'aucune source n'est ingérée.
+
+### Analyse NLP — interroger en langage naturel
+
+![Analyse NLP](screenshots/analyse_nlp.png)
+
+L'onglet **Analyse NLP** est l'interface principale de recherche. Il suffit de taper une question en français dans le champ en bas (ex. : *« Combien de cas de covid en France en 2021 ? »*) et d'appuyer sur **Envoyer**.
+
+La réponse est structurée en deux parties :
+- **Données épidémiologiques** — indicateurs chiffrés extraits des sources (hospitalisations, réanimations, décès, par région et date).
+- **Relations dans le graphe** — triples de connaissance reliant la maladie aux régions et dates trouvées.
+
+Chaque réponse indique la source utilisée (ex. : `spf`, `flunet`).
+
+### Graphe — explorer le graphe de connaissances
+
+![Graphe](screenshots/graphe.png)
+
+L'onglet **Graphe** affiche le graphe de connaissances construit à partir des données ingérées, rendu avec Sigma.js :
+
+- **Nœuds orange** — entités maladies (mpox, covid19, influenza, dengue…).
+- **Nœuds bleus** — entités associées (régions, dates, datasets).
+- **Arêtes** — triples de connaissance (relations `has_hospitalizations_in`, `reported_in`…).
+
+Le graphe est interactif : déplacer, zoomer, et cliquer sur un nœud pour explorer ses voisins.
+
+### Métriques — analyser la structure du graphe
+
+![Métriques](screenshots/metriques.png)
+
+L'onglet **Métriques** expose les statistiques structurelles du graphe :
+
+- **Nœuds** — nombre total d'entités dans le graphe.
+- **Relations** — nombre total de triples de connaissance.
+- **Centralité PageRank** — classement des maladies les plus connectées dans le graphe. Une maladie avec un score PageRank élevé est reliée à davantage de régions, dates et indicateurs, ce qui signifie que les requêtes NLP la concernant bénéficient de plus de contexte graphe.
+
+---
+
 ## Ingestion des données
 
 L'ingestion est manuelle — elle télécharge les sources publiques, calcule les embeddings localement et construit le graphe de connaissances.
