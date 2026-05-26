@@ -46,12 +46,19 @@ function GraphLoader() {
   useEffect(() => {
     const g = new Graph();
 
+    const cleanLabel = (id: string): string => {
+      // "disease:COVID-19" → "COVID-19", "region:FR-75@2021-03-15" → "FR-75"
+      const withoutPrefix = id.replace(/^(disease:|region:|metric:)/, "");
+      return withoutPrefix.split("@")[0];
+    };
+
     nodes.forEach((n, i) => {
       const angle = nodes.length > 1 ? (2 * Math.PI * i) / nodes.length : 0;
+      const isDisease = n.id.startsWith("disease:");
       g.addNode(n.id, {
-        label: n.label,
-        size: 8,
-        color: n.id.startsWith("disease:") ? "#f59e0b" : "#3b82f6",
+        label: cleanLabel(n.id),
+        size: isDisease ? 16 : 6,
+        color: isDisease ? "#f59e0b" : "#3b82f6",
         x: Math.cos(angle),
         y: Math.sin(angle),
       });
@@ -63,9 +70,8 @@ function GraphLoader() {
       }
     });
 
-    // ForceAtlas2 uniquement pour des graphes de taille raisonnable
-    if (g.order > 1 && g.order <= 150) {
-      forceAtlas2.assign(g, { iterations: 50 });
+    if (g.order > 1 && g.order <= 300) {
+      forceAtlas2.assign(g, { iterations: 150, settings: { gravity: 1 } });
     }
 
     loadGraph(g);

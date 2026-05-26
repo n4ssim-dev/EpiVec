@@ -17,6 +17,8 @@ interface GraphEdge {
   predicate: string;
 }
 
+type IngestionStatus = "idle" | "loading" | "ok" | "error";
+
 interface AppState {
   // Filtres globaux
   selectedDisease: string | null;
@@ -37,6 +39,12 @@ interface AppState {
   // API status
   backendOnline: boolean;
   setBackendOnline: (v: boolean) => void;
+
+  // Ingestion
+  ingestionStatuses: Record<string, IngestionStatus>;
+  ingestionCounts: Record<string, number>;
+  setIngestionStatus: (sourceId: string, status: IngestionStatus) => void;
+  setIngestionCount: (sourceId: string, count: number) => void;
 }
 
 export const useStore = create<AppState>((set) => ({
@@ -55,4 +63,11 @@ export const useStore = create<AppState>((set) => ({
 
   backendOnline: false,
   setBackendOnline: (v) => set({ backendOnline: v }),
+
+  ingestionStatuses: {},
+  ingestionCounts: {},
+  setIngestionStatus: (sourceId, status) =>
+    set((s) => ({ ingestionStatuses: { ...s.ingestionStatuses, [sourceId]: status } })),
+  setIngestionCount: (sourceId, count) =>
+    set((s) => ({ ingestionCounts: { ...s.ingestionCounts, [sourceId]: count } })),
 }));

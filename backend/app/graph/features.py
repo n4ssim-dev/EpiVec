@@ -9,7 +9,6 @@ def compute_centrality() -> dict[str, dict]:
         return {}
     return {
         "degree": nx.degree_centrality(G),
-        "betweenness": nx.betweenness_centrality(G),
         "pagerank": nx.pagerank(G),
     }
 

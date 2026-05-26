@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { api } from "../../api/client";
+import { useStore } from "../../store";
 
 interface Source {
   id: string;
@@ -21,20 +22,19 @@ const SOURCES: Source[] = [
 type Status = "idle" | "loading" | "ok" | "error";
 
 export default function DataSources() {
-  const [statuses, setStatuses] = useState<Record<string, Status>>(
-    Object.fromEntries(SOURCES.map((s) => [s.id, "idle"]))
-  );
-  const [counts, setCounts] = useState<Record<string, number>>({});
+  const { ingestionStatuses, ingestionCounts, setIngestionStatus, setIngestionCount } = useStore();
   const [globalLoading, setGlobalLoading] = useState(false);
 
+  const getStatus = (id: string): Status => (ingestionStatuses[id] as Status) ?? "idle";
+
   const ingest = async (sourceId: string) => {
-    setStatuses((prev) => ({ ...prev, [sourceId]: "loading" }));
+    setIngestionStatus(sourceId, "loading");
     try {
       const result = await api.ingest(sourceId);
-      setCounts((prev) => ({ ...prev, [sourceId]: result?.records_ingested ?? 0 }));
-      setStatuses((prev) => ({ ...prev, [sourceId]: "ok" }));
+      setIngestionCount(sourceId, result?.records_ingested ?? 0);
+      setIngestionStatus(sourceId, "ok");
     } catch {
-      setStatuses((prev) => ({ ...prev, [sourceId]: "error" }));
+      setIngestionStatus(sourceId, "error");
     }
   };
 
@@ -61,7 +61,7 @@ export default function DataSources() {
 
       <div className="grid gap-3">
         {SOURCES.map((source) => {
-          const status = statuses[source.id];
+          const status = getStatus(source.id);
           return (
             <div
               key={source.id}
@@ -79,9 +79,9 @@ export default function DataSources() {
                     )}
                   </div>
                   <p className="text-xs text-slate-500 truncate">{source.description}</p>
-                  {status === "ok" && counts[source.id] !== undefined && (
+                  {status === "ok" && ingestionCounts[source.id] !== undefined && (
                     <p className="text-xs text-emerald-400 mt-0.5">
-                      {counts[source.id].toLocaleString()} indicateurs indexés
+                      {ingestionCounts[source.id].toLocaleString()} indicateurs indexés
                     </p>
                   )}
                   {status === "error" && (

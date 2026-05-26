@@ -35,10 +35,10 @@ export const api = {
     httpSlow.post<QueryResponse>("/query/", { question }).then((r) => r.data),
 
   graph: (disease?: string, region?: string, depth = 2) =>
-    http.get<GraphData>("/graph/", { params: { disease, region, depth } }).then((r) => r.data),
+    httpSlow.get<GraphData>("/graph/", { params: { disease, region, depth } }).then((r) => r.data),
 
   stats: () =>
-    http.get<StatsData>("/graph/stats").then((r) => r.data),
+    httpSlow.get<StatsData>("/graph/stats").then((r) => r.data),
 
   ingest: (source: string) =>
     httpSlow.post(`/ingest/${source}`).then((r) => r.data),

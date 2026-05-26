@@ -39,7 +39,9 @@ async def get_subgraph(
 ) -> tuple[list[dict], list[dict]]:
     G = _graph if _graph.number_of_nodes() > 0 else await rebuild_graph(session)
 
-    MAX_NODES = 200
+    MAX_NODES = 120
+    # Par seed : quota équitable pour ne pas noyer les nœuds maladie
+    filtered = bool(disease or region)
 
     seed_nodes: set[str] = set()
     if disease:
@@ -48,15 +50,19 @@ async def get_subgraph(
         seed_nodes.update(n for n in G.nodes if f"region:{region}" in n)
 
     if not seed_nodes:
-        # Sans filtre : partir des nœuds "disease:" uniquement pour rester compact
+        # Sans filtre : 5 maladies seed pour garder le graphe lisible
         disease_nodes = [n for n in G.nodes if n.startswith("disease:")]
-        seed_nodes = set(disease_nodes[:10])
+        seed_nodes = set(disease_nodes[:5])
 
+    per_seed = MAX_NODES // max(len(seed_nodes), 1) if not filtered else MAX_NODES
     subgraph_nodes: set[str] = set()
     for node in seed_nodes:
         if node in G:
-            reachable = nx.single_source_shortest_path_length(G, node, cutoff=depth)
-            subgraph_nodes.update(reachable.keys())
+            reachable = sorted(
+                nx.single_source_shortest_path_length(G, node, cutoff=depth).items(),
+                key=lambda x: x[1],
+            )
+            subgraph_nodes.update(n for n, _ in reachable[:per_seed])
             if len(subgraph_nodes) >= MAX_NODES:
                 break
 

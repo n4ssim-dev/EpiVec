@@ -18,7 +18,9 @@ async def run_graphrag_chain(
     intent: str,
     session: AsyncSession,
 ) -> tuple[str, list[str]]:
-    context_docs = retrieve_context(question, entities)
+    import asyncio
+    loop = asyncio.get_running_loop()
+    context_docs = await loop.run_in_executor(None, lambda: retrieve_context(question, entities))
     context_text = "\n".join(d["text"] for d in context_docs[:10])
     sources = list({d["metadata"].get("source", "unknown") for d in context_docs})
 
